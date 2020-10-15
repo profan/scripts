@@ -10,6 +10,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.firefox.options import Options
 from bs4 import BeautifulSoup
 
 # our utils
@@ -82,7 +83,10 @@ profile.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/x-
 profile.set_preference("browser.download.manager.showWhenStarting", False)
 profile.set_preference("browser.download.panel.shown", False)
 
-driver = webdriver.Firefox(desired_capabilities=capabilities, firefox_profile=profile)
+options = Options()
+# options.headless = True
+
+driver = webdriver.Firefox(desired_capabilities=capabilities, firefox_profile=profile, options=options)
 login_to_rast_selenium(driver, args.username, args.password)
 
 all_job_ids = util.collect_job_ids_from_csv(args.filename)
