@@ -4,6 +4,8 @@ import requests
 import datetime
 import argparse
 import webbrowser
+import glob
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -77,14 +79,14 @@ capabilities["pageLoadStrategy"] = "eager"
 
 # save file shite
 profile = webdriver.FirefoxProfile()
-profile.set_preference("browser.download.dir", args.output_dir);
+profile.set_preference("browser.download.dir", os.path.join(os.getcwd(), args.output_dir))
 profile.set_preference("browser.download.folderList", 2);
 profile.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/x-download")
 profile.set_preference("browser.download.manager.showWhenStarting", False)
 profile.set_preference("browser.download.panel.shown", False)
 
 options = Options()
-# options.headless = True
+options.headless = True
 
 driver = webdriver.Firefox(desired_capabilities=capabilities, firefox_profile=profile, options=options)
 login_to_rast_selenium(driver, args.username, args.password)
@@ -92,9 +94,20 @@ login_to_rast_selenium(driver, args.username, args.password)
 all_job_ids = util.collect_job_ids_from_csv(args.filename)
 print("[fetch_subsystems] got %d job ids to fetch" % len(all_job_ids))
 
+def rename_most_recent_table_in_dir(directory, new_name):
+    files = glob.glob(directory + "/*.tsv")
+    most_recent_file = max(files, key=os.path.getctime)
+    if "table" in most_recent_file:
+        path, base = os.path.split(most_recent_file)
+        os.rename(most_recent_file, os.path.join(path, new_name))
+        return True
+    return False
+
 for i, job_id in enumerate(all_job_ids):
     genome_url = extract_genome_url_for_job_id(driver, job_id)
     extract_subsystem_data(driver, genome_url)
+    if not rename_most_recent_table_in_dir(args.output_dir, job_id + ".tsv"):
+        print("[fetch_subsystems] failed to rename %d for some reason?" % (i + 1))
     print("[fetch_subsystems] downloaded table for %d of %d" % (i + 1, len(all_job_ids)))
 
 driver.quit()
