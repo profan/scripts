@@ -106,8 +106,8 @@ def rename_most_recent_table_in_dir(directory, new_name):
 for i, job_id in enumerate(all_job_ids):
     genome_url = extract_genome_url_for_job_id(driver, job_id)
     extract_subsystem_data(driver, genome_url)
-    if not rename_most_recent_table_in_dir(args.output_dir, job_id + ".tsv"):
+    if not rename_most_recent_table_in_dir(args.output_dir, job_id + "_subsystems.tsv"):
         print("[fetch_subsystems] failed to rename %d for some reason?" % (i + 1))
-    print("[fetch_subsystems] downloaded table for %d of %d" % (i + 1, len(all_job_ids)))
+    print("[fetch_subsystems] downloaded table for job_id %s, %d of %d" % (job_id, i + 1, len(all_job_ids)))
 
 driver.quit()

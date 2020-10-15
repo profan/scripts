@@ -1,7 +1,15 @@
 import os
 import csv
+import xlrd
 
 # reused functions
+def csv_from_excel(src_path, target_path):
+    wb = xlrd.open_workbook(src_path)
+    sh = wb.sheet_by_name('Sheet1') # WHAT THE FUCK
+    with open(target_path, 'w') as csv_file:
+        wr = csv.writer(csv_file, quoting=csv.QUOTE_ALL)
+        for rownum in xrange(sh.nrows):
+            wr.writerow(sh.row_values(rownum))
 
 def collect_job_ids_from_csv(job_csv_file_path):
     job_ids = []
