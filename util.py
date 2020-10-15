@@ -11,6 +11,15 @@ def csv_from_excel(src_path, target_path):
         for rownum in xrange(sh.nrows):
             wr.writerow(sh.row_values(rownum))
 
+def original_file_name_from_job_id(job_csv_file_path, job_id):
+    with open(job_csv_file_path, 'r') as csvfile:
+        reader = csv.DictReader(csvfile) # fieldnames=['job_id', 'file_name', 'success']
+        for row in reader:
+            if row['job_id'] == job_id:
+                base, name_and_ext = os.path.split(row['file_name'])
+                name, ext = os.path.splitext(name_and_ext)
+                return name
+
 def collect_job_ids_from_csv(job_csv_file_path):
     job_ids = []
     with open(job_csv_file_path, 'r') as csvfile:

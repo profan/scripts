@@ -92,6 +92,7 @@ driver = webdriver.Firefox(desired_capabilities=capabilities, firefox_profile=pr
 login_to_rast_selenium(driver, args.username, args.password)
 
 all_job_ids = util.collect_job_ids_from_csv(args.filename)
+all_job_names = [util.original_file_name_from_job_id(args.filename, job_id) for job_id in all_job_ids]
 print("[fetch_subsystems] got %d job ids to fetch" % len(all_job_ids))
 
 def rename_most_recent_table_in_dir(directory, new_name):
@@ -106,7 +107,8 @@ def rename_most_recent_table_in_dir(directory, new_name):
 for i, job_id in enumerate(all_job_ids):
     genome_url = extract_genome_url_for_job_id(driver, job_id)
     extract_subsystem_data(driver, genome_url)
-    if not rename_most_recent_table_in_dir(args.output_dir, job_id + "_subsystems.tsv"):
+    original_filename = all_job_names[i]
+    if not rename_most_recent_table_in_dir(args.output_dir, original_filename + "_rast_subsystems.tsv"):
         print("[fetch_subsystems] failed to rename %d for some reason?" % (i + 1))
     print("[fetch_subsystems] downloaded table for job_id %s, %d of %d" % (job_id, i + 1, len(all_job_ids)))
 
