@@ -68,7 +68,7 @@ parser.add_argument(
 )
 parser.add_argument(
     '--output-dir', metavar='output_dir', type=str, default=os.getcwd(),
-    help='csv with submitted jobs'
+    help='output directory where downloaded files go'
 )
 
 args = parser.parse_args()
