@@ -4,3 +4,4 @@
 *.xls
 .*.s??
 __pycache__/
+.vscode/
