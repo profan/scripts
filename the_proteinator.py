@@ -34,7 +34,6 @@ def collect_subsystems_from_all_files(path):
     filtered_tsv_files = filter_for_files(path = path, ext = '.tsv', pattern = 'rast_subsystems')
     return [(file_path_to_id(f), collect_subsystems_from_file_pandas(f)) for f in filtered_tsv_files]
 
-
 predation_data = pd.read_csv('../data/k_pneumoniae_predation.csv')
 predation_data.columns = [c.replace(' ', '_') for c in predation_data.columns]
 
@@ -48,6 +47,10 @@ resistant = predation_data.query(is_resistant)
 # intermediate = predation_data.query(is_intermediate)
 
 all_protein_data = collect_proteins_from_all_files('../output')
+all_subsystem_data = collect_subsystems_from_all_files('../output')
+subsystem_data_frame = pd.concat([data for (id, data) in all_subsystem_data]) \
+    .drop_duplicates(subset = 'Role', keep = 'first') # this might drop useful data if we want to know all the locations a given role occurs, this will just give us the first
+
 susceptible_samples = [(id, data) for (id, data) in all_protein_data if len(susceptible.query('Number == @id')) > 0]
 resistant_samples = [(id, data) for (id, data) in all_protein_data if len(resistant.query('Number == @id')) > 0]
 # intermediate_samples = [(id, data) for (id, data) in all_protein_data if len(intermediate.query('Number == @id')) > 0]
@@ -138,5 +141,5 @@ def output_to_file(data, output_filename):
 
 output_to_file(all_common_proteins, 'all_common_proteins')
 output_to_file(all_proteins_unique_to_resistant, 'unique_resistant_proteins')
-output_to_file(all_proteins_unique_to_susceptible, 'unique_susceptible_roteins')
+output_to_file(all_proteins_unique_to_susceptible, 'unique_susceptible_proteins')
 # output_to_file(all_proteins_unique_to_intermediate, 'unique_intermediate_proteins')
