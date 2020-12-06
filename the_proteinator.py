@@ -39,7 +39,7 @@ predation_data = pd.read_csv('../data/k_pneumoniae_predation.csv')
 predation_data.columns = [c.replace(' ', '_') for c in predation_data.columns]
 
 is_susceptible = "Log_reduction == '3' or Log_reduction == '4' or Log_reduction == '5'"
-is_resistant = "Log_reduction == '0' or Log_reduction == '1' or Log_reduction == '2'"
+is_resistant = "Log_reduction == '0' or Log_reduction == '1'"
 # is_intermediate = "Log_reduction > 999"
 
 susceptible = predation_data.query(is_susceptible)
@@ -65,8 +65,14 @@ all_proteins = pd.concat([susceptible_proteins, resistant_proteins]) \
     .drop_duplicates(subset = 'function', keep = 'first')
 
 # all_proteins.drop(all_proteins[])
-all_common_proteins = all_proteins.query('function in @susceptible_proteins.function and function in @resistant_proteins.function') \
-    .drop_duplicates(subset = 'function', keep = 'first')
+
+import functools
+all_functions = [e['function'].values.tolist() for (id, e) in all_protein_data]
+all_roles = functools.reduce(lambda x, y: set(x).intersection(y), all_functions)
+
+all_common_proteins = all_proteins.query('function in @all_roles')
+# all_common_proteins = all_proteins.query('function in @susceptible_proteins.function and function in @resistant_proteins.function') \
+#     .drop_duplicates(subset = 'function', keep = 'first')
 
 print(f"number of total proteins: {len(all_proteins)}")
 print(f"number of common proteins: {len(all_common_proteins)}")
@@ -75,8 +81,12 @@ number_of_unique_functions_in_total = len(all_common_proteins.function.unique())
 print(f"number of unique functions in whole dataset: {number_of_unique_functions_in_total}")
 # all_protein_roles = all_proteins['function']
 
-all_proteins_unique_to_susceptible = all_proteins.query('function in @susceptible_proteins.function and function not in @all_common_proteins.function')
-all_proteins_unique_to_resistant = all_proteins.query('function in @resistant_proteins.function and function not in @all_common_proteins.function')
+all_proteins_unique_to_susceptible = all_proteins.query(
+    'function in @susceptible_proteins.function and function not in @resistant_proteins.function and function not in @all_common_proteins.function'
+)
+all_proteins_unique_to_resistant = all_proteins.query(
+    'function in @resistant_proteins.function and function not in @susceptible_proteins.function and function not in @all_common_proteins.function'
+)
 # all_proteins_unique_to_intermediate = all_proteins.query('function in @intermediate_proteins.function and function not in @all_common_proteins.function')
 
 # import functools
@@ -90,7 +100,7 @@ print(f"number of classified proteins unique to resistant samples: {len(all_prot
 
 # s_i_overlap = all_proteins.query('function in @susceptible_proteins and function in @intermediate_proteins')
 # r_i_overlap = all_proteins.query('function in @resistant_proteins and function in @intermediate_proteins')
-s_r_overlap = all_proteins.query('function in @susceptible_proteins and function in @resistant_proteins')
+s_r_overlap = all_proteins.query('function in @susceptible_proteins and function in @resistant_proteins and function not in @all_common_proteins.function')
 
 # calculate the ones common to log reduction 2 or 3
 log2_data = predation_data.query('Log_reduction == "2"')
