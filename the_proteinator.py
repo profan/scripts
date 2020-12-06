@@ -39,7 +39,7 @@ predation_data = pd.read_csv('../data/k_pneumoniae_predation.csv')
 predation_data.columns = [c.replace(' ', '_') for c in predation_data.columns]
 
 is_susceptible = "Log_reduction == '3' or Log_reduction == '4' or Log_reduction == '5'"
-is_resistant = "Log_reduction == '0' or Log_reduction == '1'"
+is_resistant = "Log_reduction == '0' or Log_reduction == '1' or Log_reduction == '2'"
 # is_intermediate = "Log_reduction > 999"
 
 susceptible = predation_data.query(is_susceptible)
