@@ -37,14 +37,15 @@ def collect_subsystems_from_all_files(path):
 predation_data = pd.read_csv('../data/k_pneumoniae_predation.csv')
 predation_data.columns = [c.replace(' ', '_') for c in predation_data.columns]
 
+# 2021-04-02: we previously grouped intermediates in with resistants, but had forgotten why
+#  and so we now reintroduce the intermediates group.. at least until we figure out why we did that before :P
 is_susceptible = "Log_reduction == '3' or Log_reduction == '4' or Log_reduction == '5'"
-is_resistant = "Log_reduction == '0' or Log_reduction == '1' or Log_reduction == '2'"
-# is_intermediate = "Log_reduction > 999"
+is_resistant = "Log_reduction == '0' or Log_reduction == '1'"
+is_intermediate = "Log_reduction == '2'"
 
 susceptible = predation_data.query(is_susceptible)
 resistant = predation_data.query(is_resistant)
-
-# intermediate = predation_data.query(is_intermediate)
+intermediate = predation_data.query(is_intermediate)
 
 all_protein_data = collect_proteins_from_all_files('../output')
 all_subsystem_data = collect_subsystems_from_all_files('../output')
@@ -53,18 +54,37 @@ subsystem_data_frame = pd.concat([data for (id, data) in all_subsystem_data]) \
 
 susceptible_samples = [(id, data) for (id, data) in all_protein_data if len(susceptible.query('Number == @id')) > 0]
 resistant_samples = [(id, data) for (id, data) in all_protein_data if len(resistant.query('Number == @id')) > 0]
-# intermediate_samples = [(id, data) for (id, data) in all_protein_data if len(intermediate.query('Number == @id')) > 0]
+intermediate_samples = [(id, data) for (id, data) in all_protein_data if len(intermediate.query('Number == @id')) > 0]
+
+def merge_dataframes_on_column(frames, how, on):
+    df_merge_result = frames[0]
+    for df in frames[1:]:
+        df_merge_result = pd.merge(
+            df_merge_result, df.drop_duplicates(subset = 'function', keep='first'),
+            how=how,
+            on=on
+        )
+    return df_merge_result
 
 susceptible_proteins = pd.concat([data for (id, data) in susceptible_samples]) \
+    .drop_duplicates(subset = 'function', keep = 'first')
+
+susceptible_proteins_common = merge_dataframes_on_column([data for (id, data) in susceptible_samples], how='inner', on=['function']) \
     .drop_duplicates(subset = 'function', keep = 'first')
 
 resistant_proteins = pd.concat([data for (id, data) in resistant_samples]) \
     .drop_duplicates(subset = 'function', keep = 'first')
 
-# intermediate_proteins = pd.concat([data for (id, data) in intermediate_samples]) \
-#     .drop_duplicates(subset = 'function', keep = 'first')
+resistant_proteins_common = merge_dataframes_on_column([data for (id, data) in resistant_samples], how='inner', on=['function']) \
+    .drop_duplicates(subset = 'function', keep = 'first')
 
-all_proteins = pd.concat([susceptible_proteins, resistant_proteins]) \
+intermediate_proteins = pd.concat([data for (id, data) in intermediate_samples]) \
+    .drop_duplicates(subset = 'function', keep = 'first')
+
+intermediate_proteins_common = merge_dataframes_on_column([data for (id, data) in intermediate_samples], how='inner', on=['function']) \
+    .drop_duplicates(subset = 'function', keep = 'first')
+
+all_proteins = pd.concat([susceptible_proteins, resistant_proteins, intermediate_proteins]) \
     .drop_duplicates(subset = 'function', keep = 'first')
 
 # all_proteins.drop(all_proteins[])
@@ -84,13 +104,27 @@ number_of_unique_functions_in_total = len(all_common_proteins.function.unique())
 print(f"number of unique functions in whole dataset: {number_of_unique_functions_in_total}")
 # all_protein_roles = all_proteins['function']
 
+# if it occurs in any samples in the group but not in any other groups
 all_proteins_unique_to_susceptible = all_proteins.query(
-    'function in @susceptible_proteins.function and function not in @resistant_proteins.function and function not in @all_common_proteins.function'
+    'function in @susceptible_proteins.function and function not in @resistant_proteins.function and function not in @intermediate_proteins.function and function not in @all_common_proteins.function'
 )
 all_proteins_unique_to_resistant = all_proteins.query(
-    'function in @resistant_proteins.function and function not in @susceptible_proteins.function and function not in @all_common_proteins.function'
+    'function in @resistant_proteins.function and function not in @susceptible_proteins.function and function not in @intermediate_proteins.function and function not in @all_common_proteins.function'
 )
-# all_proteins_unique_to_intermediate = all_proteins.query('function in @intermediate_proteins.function and function not in @all_common_proteins.function')
+all_proteins_unique_to_intermediate = all_proteins.query(
+    'function in @intermediate_proteins.function and function not in @resistant_proteins.function and function not in @susceptible_proteins.function and function not in @all_common_proteins.function'
+)
+
+# new set of those that only occur in _all samples_ within the group
+all_proteins_unique_to_every_susceptible = all_proteins.query(
+    'function in @susceptible_proteins_common.function and function not in @resistant_proteins_common.function and function not in @intermediate_proteins_common.function and function not in @all_common_proteins.function'
+)
+all_proteins_unique_to_every_resistant = all_proteins.query(
+    'function in @resistant_proteins_common.function and function not in @susceptible_proteins_common.function and function not in @intermediate_proteins_common.function and function not in @all_common_proteins.function'
+)
+all_proteins_unique_to_every_intermediate = all_proteins.query(
+    'function in @intermediate_proteins_common.function and function not in @resistant_proteins_common.function and function not in @susceptible_proteins_common.function and function not in @all_common_proteins.function'
+)
 
 # import functools
 # total_number_of_proteins = functools.reduce(lambda acc, cur: acc + (len(cur[1])), all_protein_data, 0)
@@ -99,7 +133,7 @@ all_proteins_unique_to_resistant = all_proteins.query(
 
 print(f"number of classified proteins unique to susceptible samples: {len(all_proteins_unique_to_susceptible)}")
 print(f"number of classified proteins unique to resistant samples: {len(all_proteins_unique_to_resistant)}")
-# print(f"number of classified proteins unique to intermediate samples: {len(all_proteins_unique_to_intermediate)}")
+print(f"number of classified proteins unique to intermediate samples: {len(all_proteins_unique_to_intermediate)}")
 
 # s_i_overlap = all_proteins.query('function in @susceptible_proteins and function in @intermediate_proteins')
 # r_i_overlap = all_proteins.query('function in @resistant_proteins and function in @intermediate_proteins')
@@ -123,7 +157,21 @@ print(f"similarity between log2 and log3 reduction data: {log2_3_similarity * 10
 
 num_s = len(susceptible_proteins)
 num_r = len(resistant_proteins)
-# num_i = len(intermediate_proteins)
+num_i = len(intermediate_proteins)
+
+num_s_common = len(susceptible_proteins_common)
+num_r_common = len(resistant_proteins_common)
+num_i_common = len(intermediate_proteins_common)
+print(f"num_s_common: {num_s_common}")
+print(f"num_r_common: {num_r_common}")
+print(f"num_i_common: {num_i_common}")
+
+num_u_s_common = len(all_proteins_unique_to_every_susceptible)
+num_u_r_common = len(all_proteins_unique_to_every_resistant)
+num_u_i_common = len(all_proteins_unique_to_every_intermediate)
+print(f"num_u_s_common: {num_u_s_common}")
+print(f"num_u_r_common: {num_u_r_common}")
+print(f"num_u_i_common: {num_u_i_common}")
 
 # s_i_similarity = min(num_s, num_i) / max(num_s, num_i)
 # r_i_similarity = min(num_r, num_i) / max(num_r, num_i)
@@ -142,4 +190,8 @@ def output_to_file(data, output_filename):
 output_to_file(all_common_proteins, 'all_common_proteins')
 output_to_file(all_proteins_unique_to_resistant, 'unique_resistant_proteins')
 output_to_file(all_proteins_unique_to_susceptible, 'unique_susceptible_proteins')
-# output_to_file(all_proteins_unique_to_intermediate, 'unique_intermediate_proteins')
+output_to_file(all_proteins_unique_to_intermediate, 'unique_intermediate_proteins')
+
+output_to_file(all_proteins_unique_to_every_resistant, 'unique_resistant_proteins_common')
+output_to_file(all_proteins_unique_to_every_susceptible, 'unique_susceptible_proteins_common')
+output_to_file(all_proteins_unique_to_every_intermediate, 'unique_intermediate_proteins_common')
