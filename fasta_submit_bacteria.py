@@ -9,8 +9,11 @@ import re
 # our utils
 import util
 
+# Klebsiella pneumoniae
+# https://www.uniprot.org/taxonomy/573
+
 path_to_submit_fasta_cmd = shutil.which("svr_submit_RAST_job")
-submit_fasta_job_cmd = " --domain Bacteria --user %s --passwd %s --fasta %s"
+submit_fasta_job_cmd = " --taxon_ID 573 --determine_family --user %s --passwd %s --fasta %s"
 absolute_cmd_path = path_to_submit_fasta_cmd + submit_fasta_job_cmd
 fasta_job_output_regex = re.compile(r"'(\d+)'")
 
