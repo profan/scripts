@@ -32,15 +32,16 @@ parser.add_argument(
 )
 
 def write_job_id_to_file(job_id, file_name, success):
-    output_filename = 'output/submitted_jobs.csv'
+    output_timestamp = util.get_current_timestamp()
+    output_filename = f"output/submitted_jobs_{output_timestamp}.csv"
     if not os.path.exists(output_filename):
-        print("[batch] writing id: %s to new file: %s" % (job_id, output_filename))
+        print(f"[batch] writing id: {job_id} to new file: {output_filename}")
         with open(output_filename, 'w') as csvfile:
             our_writer = csv.writer(csvfile)
             our_writer.writerow(['job_id', 'file_name', 'success'])
             our_writer.writerow([job_id, file_name, success])
     else:
-        print("[batch] writing id: %s to existing file: %s" % (job_id, output_filename))
+        print(f"[batch] writing id: {job_id} to existing file: {output_filename}")
         with open(output_filename, 'a') as csvfile:
             our_writer = csv.writer(csvfile)
             our_writer.writerow([job_id, file_name, success])

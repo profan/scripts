@@ -1,10 +1,9 @@
-import os
-import csv
-import requests
-import datetime
+from typing import Optional
+
+from rich.progress import track
 import argparse
-import webbrowser
 import glob
+import os
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -36,11 +35,14 @@ def login_to_rast_selenium(driver, username, password):
     passfield.send_keys(password)
     submit.click()
 
-def extract_genome_url_for_job_id(driver, job_id):
+def extract_genome_url_for_job_id(driver, job_id) -> Optional[str]:
     driver.get(job_page_url % job_id)
     soup = BeautifulSoup(driver.page_source, "lxml")
     e = soup.find('a', string="Browse annotated genome in SEED Viewer")
-    return base_url + "/" + e['href']
+    if e is not None:
+        return base_url + "/" + e['href']
+    else:
+        return None
 
 def extract_subsystem_data(driver, url):
     driver.get(url) # first go to the right page
@@ -104,8 +106,13 @@ def rename_most_recent_table_in_dir(directory, new_name):
         return True
     return False
 
-for i, job_id in enumerate(all_job_ids):
+for i, job_id in track(enumerate(all_job_ids), total=len(all_job_ids)):
+
     genome_url = extract_genome_url_for_job_id(driver, job_id)
+    if genome_url is None:
+        print(f"[fetch_subsystems] job id: {job_id} might have failed annotation? skipping!")
+        continue
+
     extract_subsystem_data(driver, genome_url)
     original_filename = all_job_names[i]
     if not rename_most_recent_table_in_dir(args.output_dir, original_filename + "_rast_subsystems.tsv"):
