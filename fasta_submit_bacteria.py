@@ -31,8 +31,7 @@ parser.add_argument(
     help='the directory with the fasta (.fa) files in it to upload'
 )
 
-def write_job_id_to_file(job_id, file_name, success):
-    output_timestamp = util.get_current_timestamp()
+def write_job_id_to_file(output_timestamp, job_id, file_name, success):
     output_filename = f"output/submitted_jobs_{output_timestamp}.csv"
     if not os.path.exists(output_filename):
         print(f"[batch] writing id: {job_id} to new file: {output_filename}")
@@ -47,6 +46,7 @@ def write_job_id_to_file(job_id, file_name, success):
             our_writer.writerow([job_id, file_name, success])
 
 def submit_fasta_files_in_dir(username, password, directory):
+    current_output_timestamp = util.get_current_timestamp()
     all_job_paths = util.get_files_in_folder_with_ext(directory, ".fa")
     total_jobs_in_folder = len(all_job_paths)
     print("[batch] total jobs to submit: %d at: %s" % (total_jobs_in_folder, datetime.datetime.now()))
@@ -58,12 +58,12 @@ def submit_fasta_files_in_dir(username, password, directory):
             output = subprocess.getoutput(absolute_cmd_path % (args.username, args.password, entry))
             our_match = fasta_job_output_regex.search(output)
             submitted_job_id = our_match.group(1)
-            write_job_id_to_file(submitted_job_id, entry, success = True)
+            write_job_id_to_file(current_output_timestamp, submitted_job_id, entry, success = True)
             total_successful_jobs += 1
         except:
             total_failed_jobs += 1
             print("[batch] failed to submit: %s at %s" % (entry, datetime.datetime.now()))
-            write_job_id_to_file(-1, entry, success = False)
+            write_job_id_to_file(current_output_timestamp, -1, entry, success = False)
     print("[batch] total successful jobs: %d" % total_successful_jobs)
     print("[batch] total failed jobs: %d" % total_failed_jobs)
     print("[batch] finished at %s" % datetime.datetime.now())

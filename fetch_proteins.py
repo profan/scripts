@@ -6,6 +6,9 @@ import argparse
 import shutil
 import re
 
+# the only dependency
+from rich.progress import track
+
 # our utils
 import util
 path_to_fetch_cmd = shutil.which("svr_retrieve_RAST_job")
@@ -38,7 +41,7 @@ def ext_for_output_type(t):
     if t == "table_txt":
         return "tsv"
     elif t == "gff3":
-        return "gff"
+        return "gff3"
     else:
         raise Exception("no matching extension for given output type: %s" % t)
 
@@ -47,7 +50,7 @@ def retrieve_proteins_for_all_jobs(username, password, all_job_ids, all_job_name
     print("[batch - proteins] total jobs to fetch: %d at %s" % (total_jobs, datetime.datetime.now()))
     total_successful_jobs = 0
     total_failed_jobs = 0
-    for (job_id, job_name) in zip(all_job_ids, all_job_names):
+    for (job_id, job_name) in track(zip(all_job_ids, all_job_names), description=f"Fetching {output_type} samples", total=len(all_job_ids)):
         try:
             print("[batch - proteins] trying to fetch: %s at %s" % (job_id, datetime.datetime.now()))
             target_ext = ext_for_output_type(output_type)
@@ -55,7 +58,7 @@ def retrieve_proteins_for_all_jobs(username, password, all_job_ids, all_job_name
             arguments = (args.username, args.password, job_id, target_filename)
             output = subprocess.getoutput(absolute_cmd_path % arguments)
             if not os.path.exists(target_filename):
-                raise Error('[batch - protens] expected output file %s to exist? job probably failed' % target_filename)
+                raise Exception('[batch - protens] expected output file %s to exist? job probably failed' % target_filename)
             total_successful_jobs += 1
         except:
             total_failed_jobs += 1
