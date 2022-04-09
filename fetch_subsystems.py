@@ -97,15 +97,6 @@ all_job_ids = util.collect_job_ids_from_csv(args.filename)
 all_job_names = [util.original_file_name_from_job_id(args.filename, job_id) for job_id in all_job_ids]
 print("[fetch_subsystems] got %d job ids to fetch" % len(all_job_ids))
 
-def rename_most_recent_table_in_dir(directory, new_name):
-    files = glob.glob(directory + "/*.tsv")
-    most_recent_file = max(files, key=os.path.getctime)
-    if "table" in most_recent_file:
-        path, base = os.path.split(most_recent_file)
-        os.rename(most_recent_file, os.path.join(path, new_name))
-        return True
-    return False
-
 for i, job_id in track(enumerate(all_job_ids), total=len(all_job_ids)):
 
     genome_url = extract_genome_url_for_job_id(driver, job_id)
@@ -115,7 +106,7 @@ for i, job_id in track(enumerate(all_job_ids), total=len(all_job_ids)):
 
     extract_subsystem_data(driver, genome_url)
     original_filename = all_job_names[i]
-    if not rename_most_recent_table_in_dir(args.output_dir, original_filename + "_rast_subsystems.tsv"):
+    if not util.rename_most_recent_file_in_dir(args.output_dir, extension=".tsv", expected_part_of_name="table", new_name=original_filename + "_rast_subsystems.tsv"):
         print("[fetch_subsystems] failed to rename %d for some reason?" % (i + 1))
     print("[fetch_subsystems] downloaded table for job_id %s, %d of %d" % (job_id, i + 1, len(all_job_ids)))
 

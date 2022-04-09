@@ -24,35 +24,31 @@ import util
 
 base_url = "https://cge.cbs.dtu.dk/services/ResFinder-4.1/"
 
-login_headers = {
-    'User-Agent': 'Mozilla/5.0'
-}
-
 def navigate_to_resfinder_page(driver: WebDriver):
 
     driver.get(base_url)
 
 def select_options_for_submission(driver: WebDriver, species_value: str):
 
-    chromosomal_point_mutations_checkbox = driver.find_element_by_id("supplied")
+    chromosomal_point_mutations_checkbox = driver.find_element(by=By.ID, value="supplied")
     chromosomal_point_mutations_checkbox.click()
 
-    acquired_antimicrobial_resistance_checkbox = driver.find_element_by_id("supplied2")
+    acquired_antimicrobial_resistance_checkbox = driver.find_element(by=By.ID, value="supplied2")
     acquired_antimicrobial_resistance_checkbox.click()
 
-    species_dropdown = Select(driver.find_element_by_id("species"))
+    species_dropdown = Select(driver.find_element(by=By.ID, value="species"))
     species_dropdown.select_by_value(species_value)
 
 def choose_and_upload_file(driver: WebDriver, file_path: str):
 
     WebDriverWait(driver, timeout=10).until(EC.frame_to_be_available_and_switch_to_it((By.ID, "myIframe")))
-    all_input_elements = driver.find_elements_by_tag_name("input")
+    all_input_elements = driver.find_elements(by=By.TAG_NAME, value="input")
     assert len(all_input_elements) == 1
 
     file_chooser = all_input_elements[0]
     file_chooser.send_keys(file_path)
 
-    submit_btn = driver.find_element_by_class_name("btn-success")
+    submit_btn = driver.find_element(by=By.CLASS_NAME, value="btn-success")
     submit_btn.click()
 
     # back to default context
@@ -70,7 +66,7 @@ def wait_for_and_extract_submitted_job_id(driver: WebDriver) -> str:
 
 def submit_email_for_notification(driver: WebDriver, email: str):
 
-    email_input_element = [e for e in driver.find_elements_by_tag_name("input") if e.is_displayed()][0]
+    email_input_element = [e for e in driver.find_elements(by=By.TAG_NAME, value="input") if e.is_displayed()][0]
     email_input_element.send_keys(email)
     email_input_element.submit()
 

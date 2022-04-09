@@ -2,17 +2,8 @@ from typing import List
 
 import os
 import csv
-import xlrd
 import datetime
-
-# reused functions
-def csv_from_excel(src_path, target_path, sheet='Sheet1'):
-    wb = xlrd.open_workbook(src_path)
-    sh = wb.sheet_by_name(sheet) # WHAT THE FUCK
-    with open(target_path, 'w') as csv_file:
-        wr = csv.writer(csv_file, quoting=csv.QUOTE_ALL)
-        for rownum in xrange(sh.nrows):
-            wr.writerow(sh.row_values(rownum))
+import glob
 
 def original_file_name_from_job_id(job_csv_file_path, job_id):
     with open(job_csv_file_path, 'r') as csvfile:
@@ -49,8 +40,17 @@ def get_files_in_folder_with_ext(directory: str, extension: str) -> List[str]:
     return paths
 
 def get_current_timestamp() -> str:
-    return datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    return datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).strftime('%Y-%m-%dT%H_%M_%SZ')
 
 def filter_for_files(path: str, ext: str, pattern: str) -> List[str]:
     matched_files = get_files_in_folder_with_ext(path, ext)
     return [f for f in matched_files if pattern in f]
+
+def rename_most_recent_file_in_dir(directory: str, extension: str, expected_part_of_name: str, new_name: str):
+    files = glob.glob(directory + "/*" + extension)
+    most_recent_file = max(files, key=os.path.getctime)
+    if expected_part_of_name in most_recent_file:
+        path, base = os.path.split(most_recent_file)
+        os.rename(most_recent_file, os.path.join(path, new_name))
+        return True
+    return False
